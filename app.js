@@ -8,11 +8,57 @@ const btn3Day = document.getElementById('btn-3day');
 const btn27Day = document.getElementById('btn-27day');
 
 let chart;
-let threeDayData = null;
+let raw3DayData = null; // Store raw entries
+let threeDayData = null; // Processed data for chart
 let twentySevenDayData = null;
 let currentMode = '3day'; // '3day' or '27day'
+let currentTimezone = 'UTC';
+
+const timezoneSelector = document.getElementById('timezone-selector');
 
 // --- Utility Functions ---
+
+function process3DayData(rawData, timezone) {
+    if (!rawData) return null;
+
+    const labels = [];
+    const dataPoints = [];
+
+    rawData.forEach(entry => {
+        // entry[0] is time_tag "YYYY-MM-DD HH:MM:SS"
+        // entry[1] is kp (string)
+
+        const dateObj = new Date(entry[0] + 'Z'); // Treat as UTC
+
+        // Format options for the selected timezone
+        const options = {
+            timeZone: timezone,
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        };
+
+        // Getting date and time parts. 
+        // Note: toLocaleString returns "Dec 30, 24:00" or similar depending on browser, 
+        // but we want a clean split.
+
+        const formatter = new Intl.DateTimeFormat('en-US', options);
+        const parts = formatter.formatToParts(dateObj);
+
+        // Extract parts safely
+        const month = parts.find(p => p.type === 'month').value;
+        const day = parts.find(p => p.type === 'day').value;
+        const hour = parts.find(p => p.type === 'hour').value;
+        const minute = parts.find(p => p.type === 'minute').value;
+
+        labels.push(`${month} ${day}\n${hour}:${minute}`);
+        dataPoints.push(parseFloat(entry[1]));
+    });
+
+    return { labels, dataPoints };
+}
 
 function getKpColor(kp) {
     if (kp >= 5) return '#ff3333'; // Red - Storm
@@ -34,34 +80,16 @@ async function fetch3DayForecast() {
         if (!response.ok) throw new Error('Failed to load 3-day forecast');
         const rawData = await response.json();
 
-        // The JSON is an array of arrays. The first element is the header.
-        // Header: ["time_tag", "kp", "observed", "noaa_scale"]
-        // Data loop starts at index 1
-
-        const labels = [];
-        const dataPoints = [];
-
-        // Skip header row (index 0)
+        // Store raw data for reprocessing
+        raw3DayData = [];
         for (let i = 1; i < rawData.length; i++) {
-            const entry = rawData[i];
-            // entry[0] is time_tag "YYYY-MM-DD HH:MM:SS"
-            // entry[1] is kp (string)
             // entry[2] is status ("observed", "estimated", "predicted")
-
-            // Filter: Show only future/forecast data (estimated or predicted)
-            // This removes the ~7 days of past "observed" data
-            if (entry[2] === 'observed') continue;
-
-            // Format Date for X-Axis (e.g., "Dec 30 12:00")
-            const dateObj = new Date(entry[0] + 'Z'); // Treat as UTC
-            const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const timeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-            labels.push(`${dateStr}\n${timeStr}`);
-            dataPoints.push(parseFloat(entry[1]));
+            if (rawData[i][2] !== 'observed') {
+                raw3DayData.push(rawData[i]);
+            }
         }
 
-        return { labels, dataPoints };
+        return process3DayData(raw3DayData, currentTimezone);
 
     } catch (err) {
         console.error(err);
@@ -236,3 +264,13 @@ loadData();
 
 btn3Day.addEventListener('click', () => switchMode('3day'));
 btn27Day.addEventListener('click', () => switchMode('27day'));
+timezoneSelector.addEventListener('change', (e) => {
+    currentTimezone = e.target.value;
+    // Re-process data with new timezone
+    if (raw3DayData) {
+        threeDayData = process3DayData(raw3DayData, currentTimezone);
+        if (currentMode === '3day') {
+            updateChart(threeDayData);
+        }
+    }
+});
