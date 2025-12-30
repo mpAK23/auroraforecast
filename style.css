@@ -18,7 +18,7 @@
 
 body {
     background-color: var(--bg-color);
-    background-image: 
+    background-image:
         radial-gradient(circle at 10% 20%, rgba(189, 0, 255, 0.15) 0%, transparent 40%),
         radial-gradient(circle at 90% 80%, rgba(0, 212, 255, 0.15) 0%, transparent 40%);
     color: var(--text-primary);
@@ -48,6 +48,7 @@ header h1 {
     font-size: 2.5rem;
     background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 5px;
 }
@@ -79,8 +80,31 @@ header h1 {
 }
 
 .toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.2);
     color: var(--text-primary);
+}
+
+.timezone-select {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    outline: none;
+}
+
+.timezone-select:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.timezone-select option {
+    background: #1a1a2e;
+    color: #fff;
 }
 
 .toggle-btn.active {
@@ -92,7 +116,8 @@ header h1 {
 
 .chart-wrapper {
     position: relative;
-    height: 400px; /* Fixed height for consistency */
+    height: 400px;
+    /* Fixed height for consistency */
     width: 100%;
 }
 
@@ -119,18 +144,28 @@ footer {
 }
 
 @keyframes pulse {
-    0% { opacity: 0.5; }
-    50% { opacity: 1; }
-    100% { opacity: 0.5; }
+    0% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.5;
+    }
 }
 
 @media (max-width: 600px) {
     header h1 {
         font-size: 1.8rem;
     }
+
     .chart-wrapper {
         height: 300px;
     }
+
     .toggle-btn {
         padding: 8px 16px;
         font-size: 0.9rem;
